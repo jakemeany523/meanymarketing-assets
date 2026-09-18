@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Threads authorization catcher</title>
+<style>
+  body { font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         max-width: 46rem; margin: 3rem auto; padding: 0 1.2rem; color: #111; }
+  .big { font: 15px ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all;
+         background: #f4f4f5; border: 1px solid #d4d4d8; border-radius: 8px; padding: 1rem;
+         user-select: all; margin: 1rem 0; }
+  .warn { background: #fff7ed; border: 1px solid #fdba74; border-radius: 8px; padding: .9rem 1rem; }
+  .ok { color: #166534; }
+  .bad { color: #991b1b; }
+  h1 { font-size: 1.35rem; }
+  .muted { color: #52525b; font-size: 14px; }
+  button { font: inherit; padding: .5rem .9rem; border-radius: 8px; border: 1px solid #d4d4d8;
+           background: #fafafa; cursor: pointer; }
+  button:hover { background: #f0f0f0; }
+</style>
+</head>
+<body>
+<h1>Threads authorization catcher</h1>
+
+<div id="out">Reading the URL...</div>
+
+<div class="warn" style="margin-top:1.5rem">
+  <strong>This page only displays the code. It never exchanges it.</strong>
+  The exchange needs the Threads app secret, and a secret must never sit on a public page.
+  Eric does the exchange on your Mac. An authorization code is valid for one hour and can be
+  used only once.
+</div>
+
+<p class="muted" style="margin-top:1.5rem">
+  No code in the URL? Then the redirect URI registered in the app does not match this page, or
+  you reached it directly. Go back and start from the authorize link.
+</p>
+
+<script>
+(function () {
+  var p = new URLSearchParams(window.location.search);
+  var code = p.get("code");
+  var err = p.get("error");
+  var desc = p.get("error_description");
+  var out = document.getElementById("out");
+
+  if (err) {
+    out.innerHTML = '<p class="bad"><strong>Authorization was denied or failed.</strong></p>' +
+      '<p><code>' + (err || "") + '</code> ' + (desc || "") + '</p>' +
+      '<p class="muted">Nothing to send. Start the authorize link again and press Allow.</p>';
+    return;
+  }
+
+  if (!code) {
+    out.innerHTML = '<p class="bad"><strong>No authorization code in this URL.</strong></p>';
+    return;
+  }
+
+  // Meta may append "#_" to the redirect. It is not part of the code.
+  code = code.replace(/#_$/, "");
+
+  out.innerHTML =
+    '<p class="ok"><strong>Got it.</strong> Copy the whole box below and send it to Eric.</p>' +
+    '<div class="big" id="code">' + code.replace(/[<>&]/g, function (c) {
+      return { "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c];
+    }) + '</div>' +
+    '<button id="cp">Copy</button> <span id="said" class="muted"></span>' +
+    '<p class="muted">Valid for one hour, single use. If it expires, rerun the authorize link.</p>';
+
+  var b = document.getElementById("cp");
+  if (b) {
+    b.addEventListener("click", function () {
+      var t = document.getElementById("code").innerText;
+      navigator.clipboard.writeText(t).then(function () {
+        document.getElementById("said").textContent = "Copied.";
+      }, function () {
+        document.getElementById("said").textContent = "Copy failed. Select the box and copy by hand.";
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>
